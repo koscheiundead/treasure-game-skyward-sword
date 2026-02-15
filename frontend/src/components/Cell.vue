@@ -39,4 +39,17 @@ function flag() {
   </div>
 </template>
 
-<style></style>
+<style>
+.cell {
+  width: 150px;
+  height: 150px;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  cursor: pointer;
+  border: 3px dashed green;
+  border-radius: 20px;
+}
+</style>

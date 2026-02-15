@@ -1,10 +1,11 @@
-from fastapi import FastAPI
+from flask import Flask
 from pydantic import BaseModel
 from typing import List, Dict, Optional, Tuple
 from itertools import combinations
+from flask_cors import CORS
 
-app = FastAPI()
-
+app = Flask(__name__)
+CORS(app)
 class Cell(BaseModel):
   row: int
   cor: int

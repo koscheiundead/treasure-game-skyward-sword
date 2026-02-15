@@ -1,5 +1,8 @@
 const { app, BrowserWindow } = require("electron");
 const path = require("path");
+const { spawn } = require('child_process');
+
+const pythonProcess = spawn('python', ['../backend/app.py']);
 
 function createWindow() {
   const win = new BrowserWindow({

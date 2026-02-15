@@ -4,7 +4,9 @@ import { useBoardStore } from './stores/boardStore';
 
 const store = useBoardStore();
 
-store.initialize();
+console.log(store.cells);
+store.initialize(4, 5);
+console.log(store.cells);
 </script>
 
 <template>

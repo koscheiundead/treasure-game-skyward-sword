@@ -1,7 +1,7 @@
+import axios from 'axios';
+
 export async function solve(boardState: any) {
-  const res = await fetch("https://localhost:8000/solve-step", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
+  const res = await axios.post("https://localhost:8000/solve-step", {
     body: JSON.stringify(boardState)
   });
 

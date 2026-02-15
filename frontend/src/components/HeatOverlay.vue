@@ -50,5 +50,9 @@ const heatStyle = computed(() => {
   color: white;
   padding: 2px 4px;
   border-radius: 3px;
+  position: absolute;
+  bottom: 2px;
+  right: 4px;
+  font-size: 10px;
 }
 </style>
