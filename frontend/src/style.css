@@ -1,0 +1,19 @@
+.cell {
+  width: 50px;
+  height: 50px;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  cursor: pointer;
+  border: 3px dashed green;
+  border-radius: 20px;
+}
+
+.prob {
+  position: absolute;
+  bottom: 2px;
+  right: 4px;
+  font-size: 10px;
+}
