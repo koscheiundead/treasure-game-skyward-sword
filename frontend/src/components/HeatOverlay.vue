@@ -7,7 +7,7 @@ const props = defineProps<{ coord: string }>();
 const store = useBoardStore();
 
 const cell = computed(() => store.cells.get(props.coord));
-const prob = computed(() => store.probabilities[props.coord]);
+const prob = computed(() => store.probabilities ? store.probabilities[props.coord] : undefined);
 
 const heatStyle = computed(() => {
   if (prob.value === undefined) return {};
@@ -37,22 +37,19 @@ const heatStyle = computed(() => {
   position: absolute;
   inset: 0;
   display: flex;
-  align-items: flex-end;
-  justify-content: flex-end;
-  padding: 4px;
-  font-size: 10px;
-  font-weight: bold;
-  pointer-events: none;
+  align-items: center;
+  justify-content: center;
+  mix-blend-mode: multiply;
+  transition: background-color 0.4s ease;
 }
 
 .prob {
-  background: rgba(0, 0, 0, 0.6);
+  font-family: 'Nunito', sans-serif;
+  font-size: 2.5rem;
+  font-weight: 900;
   color: white;
-  padding: 2px 4px;
-  border-radius: 3px;
-  position: absolute;
-  bottom: 2px;
-  right: 4px;
-  font-size: 10px;
+  text-shadow: 0px 2px 4px rgba(0, 0, 0, 0.6), 0px 0px 10px rgba(0,0,0,0.3);
+  z-index: 2;
+  mix-blend-mode: normal;
 }
 </style>

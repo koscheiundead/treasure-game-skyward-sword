@@ -25,31 +25,52 @@ function selectRupee(rupee: string) {
 function flag() {
   store.flagCell(props.coord);
 }
+
+function closeCell() {
+  showSelector.value = false;
+}
 </script>
 
 <template>
-  <div class="cell" @click="openSelector" @contextmenu.prevent="flag">
+  <div class="cell" @click.self="openSelector" @contextmenu.prevent="flag">
     <span v-if="cell.state === 'revealed'">{{ cell.rupee }}</span>
 
     <span v-if="cell.state === 'flagged'">🚩</span>
 
     <HeatOverlay :coord="coord" />
 
-    <RupeeSelector v-if="showSelector" @select="selectRupee" @close="showSelector = false"/>
+    <RupeeSelector v-if="showSelector" @select="selectRupee" @close="closeCell"/>
   </div>
 </template>
 
 <style>
 .cell {
-  width: 150px;
+  width: 100%;
   height: 150px;
   position: relative;
+  background: linear-gradient(145deg, #e7e5e4, #d6d3d1);
+  border-radius: 12px;
+  box-shadow: 4px 4px 8px #a8a29e, -4px -4px 8px #ffffff;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-weight: bold;
+  font-family: 'Cinzel', serif;
+  font-size: 2rem;
+  font-weight: 800;
+  color: #44403c;
   cursor: pointer;
-  border: 3px dashed green;
-  border-radius: 20px;
+  user-select: none;
+  transition: all 0.2s ease-out;
+  overflow: hidden;
+}
+
+.cell:hover {
+  transform: translateY(-4px);
+  box-shadow: 6px 6px 12px #a8a29e, -6px -6px 12px #ffffff;
+}
+
+.cell:active {
+  transform: translateY(0);
+  box-shadow: inset 4px 4px 8px #a8a29e, inset -4px -4px 8px #ffffff;
 }
 </style>

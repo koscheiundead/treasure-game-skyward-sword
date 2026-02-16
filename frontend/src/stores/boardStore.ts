@@ -5,18 +5,29 @@ export const useBoardStore = defineStore('board', {
   state: () => ({
     rows: 4,
     cols: 5,
-    totalBombs: 4,
+    totalFlags: 4,
     cells: new Map<string, any>(),
     probabilities: {} as Record<string, number>,
-    remainingBombs: 0,
+    remainingFlags: 0,
     validConfigurations: 0,
-    solving: false
+    solving: false,
   }),
 
   actions: {
     initialize(rows: number, cols: number) {
       this.rows = rows;
       this.cols = cols;
+
+      if (rows === 4 && cols === 5) {
+        this.totalFlags = 4;
+      } else if (rows === 5 && cols === 6) {
+        this.totalFlags = 8;
+      } else if (rows === 5 && cols === 8) {
+        this.totalFlags = 16;
+      }
+
+      this.remainingFlags = this.totalFlags;
+
       this.cells.clear();
       this.probabilities = {};
 
@@ -68,14 +79,19 @@ export const useBoardStore = defineStore('board', {
 
     async solveBoard() {
       this.solving = true;
+      this.err = null;
       const result = await solve({
         ...this.serialize(),
-        totalBombs: this.totalBombs
+        totalBombs: this.totalFlags
+      }).then((res) => {
+        console.log(res)
+        this.probabilities = res.probabilities;
+        this.remainingFlags = res.remainingBombs;
+        this.validConfigurations = res.validConfigurations;
+      }).catch((e) => {
+        this.err = e;
       });
-
-      this.probabilities = result.probabilities;
-      this.remainingBombs = result.remainingBombs;
-      this.validConfigurations = result.validConfigurations;
+      console.log("r:", result);
 
       this.solving = false;
     }

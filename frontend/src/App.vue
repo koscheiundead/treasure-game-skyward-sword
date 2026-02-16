@@ -12,8 +12,8 @@ console.log(store.cells);
 
 <template>
   <div>
-    <Controls />
-    <GameBoard/>
+    <Controls id="control"/>
+    <GameBoard id="game"/>
   </div>
 </template>
 
