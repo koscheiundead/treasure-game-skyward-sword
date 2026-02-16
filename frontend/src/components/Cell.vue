@@ -32,7 +32,7 @@ function closeCell() {
 </script>
 
 <template>
-  <div class="cell" @click.self="openSelector" @contextmenu.prevent="flag">
+  <div class="cell" @click="openSelector" @contextmenu.prevent="flag">
     <span v-if="cell.state === 'revealed'">{{ cell.rupee }}</span>
 
     <span v-if="cell.state === 'flagged'">🚩</span>
