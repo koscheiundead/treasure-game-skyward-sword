@@ -1,5 +1,6 @@
 <script setup>
 import GameBoard from './components/GameBoard.vue';
+import Controls from './components/Controls.vue';
 import { useBoardStore } from './stores/boardStore';
 
 const store = useBoardStore();
@@ -10,8 +11,10 @@ console.log(store.cells);
 </script>
 
 <template>
-  <div>Hello World</div>
-  <GameBoard/>
+  <div>
+    <Controls />
+    <GameBoard/>
+  </div>
 </template>
 
 <style scoped>

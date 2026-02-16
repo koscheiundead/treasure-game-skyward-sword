@@ -1,9 +1,7 @@
 import axios from 'axios';
 
 export async function solve(boardState: any) {
-  const res = await axios.post("https://localhost:8000/solve-step", {
-    body: JSON.stringify(boardState)
-  });
+  const { data } = await axios.post("http://127.0.0.1:5000/solve-step", boardState);
 
-  return await res.json();
+  return data;
 }

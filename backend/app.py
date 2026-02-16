@@ -1,14 +1,15 @@
-from flask import Flask
+from flask import Flask, request, jsonify, make_response
 from pydantic import BaseModel
-from typing import List, Dict, Optional, Tuple
+from typing import List, Dict, Optional, Tuple, Set
 from itertools import combinations
-from flask_cors import CORS
+from flask_cors import CORS, cross_origin
 
 app = Flask(__name__)
-CORS(app)
+cors = CORS(app, resources={r"/*": {"origins": "http://localhost:5173"}})
+app.config['CORS_HEADERS'] = 'Content-Type'
 class Cell(BaseModel):
   row: int
-  cor: int
+  col: int
   state: str # "hidden", "revealed", "flagged"
   number: Optional[int] = None
 
@@ -51,42 +52,105 @@ def validate_configuration(board, hazard_positions: set):
 
   return True
 
-@app.post("/solve-step")
-def solve_step(board: Board):
+def _build_cors_preflight_response():
+  response = make_response()
+  response.headers.add("Access-Control-Allow-Origin", "*")
+  response.headers.add("Access-Control-Allow-Headers", "*")
+  response.headers.add("Access-Control-Allow-Methods", "*")
+  return response
+
+@app.route("/solve-step", methods=['POST', 'OPTIONS'])
+def solve_step():
+  print("request hit early")
+  if request.method == "OPTIONS":
+    # handle this special for CORS
+    print("options hit")
+    return _build_cors_preflight_response()
+
+  elif request.method != "POST":
+    return RuntimeError("Don't know how to handle method {}".format(request.method))
+
+  data = request.get_json()
+  board = Board(**data)
+  print("request hit")
+  print(board)
+
+  # parse out which board we're using
   difficulty = detect_difficulty(board.rows, board.cols)
   total_hazards = difficulty["bombs"] + difficulty["rupoors"]
 
-  all_positions = [(r, c) for r in range(board.rows) for c in range(board.cols)]
+  # set board state
+  grid = {(c.row, c.col): c for c in board.cells}
+  revealed_clues = {pos: c.number for pos, c in grid.items() if c.state == "revealed"}
+  flagged_pos = {pos for pos, c in grid.items() if c.state == "flagged"}
+  hidden_pos = {pos for pos, c in grid.items() if c.state == "hidden"}
 
-  revealed_or_flagged = {(cell.row, cell.col) for cell in board.cells if cell.state in ("revealed", "flagged")}
+  # categorize hidden cells as edge or non-edge
+  edge_cells = set()
+  for r, c in revealed_clues:
+    for nb in neighbors(r, c, board.rows, board.cols):
+      if nb in hidden_pos:
+        edge_cells.add(nb)
 
-  hidden_positions = [pos for pos in all_positions if pos not in revealed_or_flagged]
+  island_cells = hidden_pos - edge_cells
+  edge_list = list(edge_cells)
 
-  valid_configurations = []
-  hazard_counts: Dict[Tuple[int, int], int] = {pos: 0 for pos in hidden_positions}
+  # solve edges - test every possible hazard on edge (k), (k) ranges from (0) to (total remaining hazards)
+  remaining_to_find = total_hazards - len(flagged_pos)
 
-  for combo in combinations(hidden_positions, total_hazards):
-    hazard_set = set(combo)
+  total_valid_global = 0
+  hazard_counts = {pos: 0 for pos in hidden_pos}
 
-    if validate_configuration(board, hazard_set):
-      valid_configurations.append(hazard_set)
-      for pos in hazard_set:
-        hazard_counts[pos] += 1
+  # optimization - only iterate through combinations of edge cells
+  for k in range(min(len(edge_list), remaining_to_find) + 1):
+    k_combos_valid = 0
+    for combo in combinations(edge_list, k):
+      hazard_set = set(combo) | flagged_pos
 
-  total_valid = len(valid_configurations)
+      # check if this edge configuration satisfies all revealed clues
+      if validate_edge_config(revealed_clues, hazard_set, board):
+        # how many ways can we pick the remaining hazards from the islands?
+        remaining_after_edge = remaining_to_find - k
+        if 0 <= remaining_after_edge <= len(island_cells):
+          ways_to_fill_islands = nCr(len(island_cells), remaining_after_edge)
 
+          k_combos_valid += ways_to_fill_islands
+          # add to edge counts
+          for pos in combo:
+            hazard_counts[pos] += ways_to_fill_islands
+          # add to island counts (proportionally)
+          if len(island_cells) > 0 and remaining_after_edge > 0:
+            island_weight = (ways_to_fill_islands * remaining_after_edge) / len(island_cells)
+            for pos in island_cells:
+              hazard_counts[pos] += island_weight
+
+    total_valid_global += k_combos_valid
+
+  # final probabilities
   probabilities = {}
+  for pos in hidden_pos:
+    prob = hazard_counts[pos] / total_valid_global if total_valid_global > 0 else 0
+    probabilities[f"{pos[0]},{pos[1]}"] = round(prob, 4)
 
-  if total_valid > 0:
-    for pos in hidden_positions:
-      probabilities[f"{pos[0]},{pos[1]}"] = hazard_counts[pos] / total_valid
-  else:
-    uniform = total_hazards / len(hidden_positions) if hidden_positions else 0
-    for pos in hidden_positions:
-      probabilities[f"{pos[0]},{pos[1]}"] = uniform
-
-  return {
+  return jsonify({
+    "status": "success",
     "probabilities": probabilities,
-    "validConfigurations": total_valid,
-    "totalHazards": total_hazards
-  }
+    "total_configs": total_valid_global
+  })
+
+def validate_edge_config(clues, hazard_set, board):
+  for (r, c), target in clues.items():
+    count = 0
+    for nb in neighbors(r, c, board.rows, board.cols):
+      if nb in hazard_set:
+        count += 1
+    if count != target:
+      return False
+  return True
+
+def nCr(n, r):
+  import math
+  return math.comb(n, r)
+
+if __name__ == "__main__":
+  app.run(host="127.0.0.1", port=5000, debug=True)
